@@ -4,6 +4,9 @@ import React, { useEffect, useCallback, useState } from "react";
 import ReactPlayer from "react-player";
 import peer from "../../services/peer";
 import { useSocket } from "../../context/SocketProvider";
+import { SocketContext } from "../../context/SocketProvider";
+import { useContext } from "react";
+import { useRouter } from 'next/navigation'
 
 const RoomPage = () => {
   const socket = useSocket();
@@ -11,6 +14,12 @@ const RoomPage = () => {
   const [myStream, setMyStream] = useState();
   const [remoteStream, setRemoteStream] = useState();
   const [roomCreator, setRoomCreator] = useState();
+  const [calldone, setCalldone] = useState(false);
+  const [start, setStart] = useState(false);
+  const {room} = useContext(SocketContext);
+  const router = useRouter();
+  const [callend,setcallend] = useState(false);
+
 
   const handleUserJoined = useCallback(({ email, id }) => {
     console.log(`Email ${email} joined room`);
@@ -25,6 +34,7 @@ const RoomPage = () => {
     const offer = await peer.getOffer();
     socket.emit("user:call", { to: remoteSocketId, offer });
     setMyStream(stream);
+    setCalldone(true);
   }, [remoteSocketId, socket]);
 
   const handleIncommingCall = useCallback(
@@ -46,6 +56,7 @@ const RoomPage = () => {
     for (const track of myStream.getTracks()) {
       peer.peer.addTrack(track, myStream);
     }
+    setStart(true);
   }, [myStream]);
 
   const handleCallAccepted = useCallback(
@@ -99,6 +110,30 @@ const RoomPage = () => {
     });
   }, []);
 
+  const handlecallend = useCallback(async () => {
+    if (!callend) {
+      // Stop each track in the stream to release the media
+      myStream.getTracks().forEach((track) => track.stop());
+  
+      // Clean up the state
+      setRemoteSocketId(null);
+      setMyStream(null);
+      setRemoteStream(null);
+      setRoomCreator(null);
+      setCalldone(false);
+      setStart(false);
+  
+      // Emit the "room:call:end" event
+      socket.emit("room:call:end", { roomCreator, room: room });
+  
+      // Redirect to the home page
+      router.push("/");
+  
+      // Set the callend flag to true to prevent redundant calls
+      setcallend(true);
+    }
+  }, [callend, myStream, roomCreator, remoteSocketId, socket, router, room]);
+
   useEffect(() => {
     socket.on("user:joined", handleUserJoined);
     socket.on("room:full", handleRoomFull);
@@ -107,6 +142,7 @@ const RoomPage = () => {
     socket.on("peer:nego:needed", handleNegoNeedIncomming);
     socket.on("peer:nego:final", handleNegoNeedFinal);
     socket.on("room:creator", handleCreator);
+    socket.on("room:call:end", handlecallend);
 
     return () => {
       socket.off("user:joined", handleUserJoined);
@@ -116,6 +152,7 @@ const RoomPage = () => {
       socket.off("peer:nego:needed", handleNegoNeedIncomming);
       socket.off("peer:nego:final", handleNegoNeedFinal);
       socket.off("room:creator", handleCreator);
+      socket.off("room:call:end", handlecallend);
     };
   }, [
     socket,
@@ -133,7 +170,7 @@ const RoomPage = () => {
     <div className=" p-5 flex flex-col  items-center h-screen w-screen bg-slate-700">
       <div className=" flex w-full h-[87%] bg-white">
         <div className=" w-[87%] h-full flex justify-center items-center">
-        {remoteSocketId ? "Some has joined" : "No one in room"}
+        {start || calldone ? "Connected" : remoteSocketId ? "Some has joined" : "No one in room"}
         </div>
         <div className=" w-[13%] h-full bg-slate-800">
 
@@ -152,7 +189,7 @@ const RoomPage = () => {
         </div>
       </div>
 
-      <div className=" flex w-full h-[13%] justify-center items-center bg-slate-700">
+      <div className=" flex mt-4 w-full justify-center items-center bg-slate-700">
 
         <div className=" overflow-hidden rounded-full flex justify-center bg-white items-center h-[5rem] w-[5rem]">
         <div className=" flex justify-center items-center h-[7rem] w-[7rem]">
@@ -169,8 +206,10 @@ const RoomPage = () => {
         )}
         </div>
         </div>
-       {myStream && !roomCreator && <button className=" text-white" onClick={sendStreams}>Send Stream</button>}
-       {remoteSocketId && roomCreator && <button className="text-white" onClick={handleCallUser}>CALL</button>}
+       {!start && myStream && !roomCreator && <button className=" text-white ml-10 bg-green-400 rounded-full p-4" onClick={sendStreams}>Call</button>}
+       { start && !roomCreator && <button className="text-white ml-10 bg-red-400 rounded-full p-4"onClick={handlecallend}>END</button>}
+       {!calldone && remoteSocketId && roomCreator && <button className="text-white ml-10 bg-green-400 rounded-full p-4" onClick={handleCallUser}>CALL</button>}
+       { calldone && <button className="text-white ml-10 bg-red-400 rounded-full p-4" onClick={handlecallend}>END</button>}
 
       </div>
     </div>

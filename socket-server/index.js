@@ -13,6 +13,17 @@ const roomParticipants = new Map();
 io.on("connection", (socket) => {
   console.log(`Socket Connected`, socket.id);
 
+  socket.on("room:call:end", ({ roomCreator, room }) => {
+    // Notify both room creator and participants about the call ending
+    io.to(room).emit("room:call:end", { roomCreator, room });
+    
+    // Clean up room-related mappings
+    roomCreators.delete(room);
+    roomParticipants.delete(room);
+
+    console.log(`Call ended in room ${room} by initiator ${socket.id}`);
+  });
+
   socket.on("room:join", (data) => {
     const { email, room } = data;
 
