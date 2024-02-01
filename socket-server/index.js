@@ -13,37 +13,35 @@ const roomParticipants = new Map();
 io.on("connection", (socket) => {
   console.log(`Socket Connected`, socket.id);
 
+  socket.on("vedio:status", ({room, status}) => {
+    socket.to(room).emit("remotevedio:status", {status: status});
+  });
+
+  socket.on("audio:status", ({room, status}) => {
+    socket.to(room).emit("remoteaudio:status", {status: status});
+  });
+
   socket.on("room:call:end", ({ roomCreator, room }) => {
-    // Notify both room creator and participants about the call ending
     io.to(room).emit("room:call:end", { roomCreator, room });
-    
-    // Clean up room-related mappings
     roomCreators.delete(room);
     roomParticipants.delete(room);
-
     console.log(`Call ended in room ${room} by initiator ${socket.id}`);
   });
 
   socket.on("room:join", (data) => {
     const { email, room } = data;
-
-    // Check if the room is already created
     if (!roomCreators.has(room)) {
-      // If not, set the current user as the creator
       roomCreators.set(room, socket.id);
       roomParticipants.set(room, [socket.id]);
       console.log("room creator: ",socket.id);
     } else {
-      // If the room is already created, check if it's full
       const participants = roomParticipants.get(room);
       if (participants.length >= 2) {
-        // If the room is full, send a message to the user and return
         console.log("Cannot join this room: ",room,socket.id);
         socket.emit("room:full", { message: "Room is full" });
         console.log("return back");
         return;
       }
-      // If the room is not full, add the current user as a participant
       participants.push(socket.id);
       roomParticipants.set(room, participants);
     }

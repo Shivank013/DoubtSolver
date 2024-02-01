@@ -7,7 +7,16 @@ import { useSocket } from "../../context/SocketProvider";
 import { SocketContext } from "../../context/SocketProvider";
 import { useContext } from "react";
 import { useRouter } from 'next/navigation'
-
+import { LuPhoneCall } from "react-icons/lu";
+import { SlCallEnd } from "react-icons/sl";
+import { HiOutlineVideoCamera } from "react-icons/hi2";
+import { HiOutlineVideoCameraSlash } from "react-icons/hi2";
+import { IoMdMic } from "react-icons/io";
+import { IoMdMicOff } from "react-icons/io";
+import { FaUser } from "react-icons/fa6";
+import { RiFullscreenFill } from "react-icons/ri";
+import { RiFullscreenExitFill } from "react-icons/ri";
+ 
 const RoomPage = () => {
   const socket = useSocket();
   const [remoteSocketId, setRemoteSocketId] = useState(null);
@@ -19,7 +28,11 @@ const RoomPage = () => {
   const {room} = useContext(SocketContext);
   const router = useRouter();
   const [callend,setcallend] = useState(false);
-
+  const [vedio, setvedio] = useState(false);
+  const [audio, setaudio] = useState(true);
+  const [remotevedio, setremotevedio] = useState(false);
+  const [remoteaudio, setremoteaudio] = useState(true);
+  const [fullscreen, setfullscreen] = useState(true);
 
   const handleUserJoined = useCallback(({ email, id }) => {
     console.log(`Email ${email} joined room`);
@@ -112,29 +125,46 @@ const RoomPage = () => {
 
   const handlecallend = useCallback(async () => {
     if (!callend) {
-      // Stop each track in the stream to release the media
       myStream.getTracks().forEach((track) => track.stop());
   
-      // Clean up the state
       setRemoteSocketId(null);
       setMyStream(null);
       setRemoteStream(null);
       setRoomCreator(null);
       setCalldone(false);
       setStart(false);
-  
-      // Emit the "room:call:end" event
+
       socket.emit("room:call:end", { roomCreator, room: room });
-  
-      // Redirect to the home page
       router.push("/");
-  
-      // Set the callend flag to true to prevent redundant calls
       setcallend(true);
     }
   }, [callend, myStream, roomCreator, remoteSocketId, socket, router, room]);
 
+  const handelVedio = useCallback(async () => {
+    console.log("vedio status: ", !vedio);
+    socket.emit("vedio:status", { room, status: !vedio });
+    setvedio(!vedio);
+  }, [vedio, room, socket]);
+
+  const handelAudio = useCallback(async () => {
+    console.log("audio status: ", !audio);
+    socket.emit("audio:status", { room, status: !audio });
+    setaudio(!audio);
+  }, [audio, room, socket]);
+
+  const handelremotevedio = useCallback(async({status}) => {
+    console.log("remote vedio status: ",!status);
+    setremotevedio(status);
+  },[]);
+
+  const handelremoteaudio = useCallback(async({status}) => {
+    console.log("remote audio status: ",!status);
+    setremoteaudio(status);
+  },[]);
+
   useEffect(() => {
+    socket.on("remotevedio:status", handelremotevedio);
+    socket.on("remoteaudio:status", handelremoteaudio);
     socket.on("user:joined", handleUserJoined);
     socket.on("room:full", handleRoomFull);
     socket.on("incomming:call", handleIncommingCall);
@@ -145,6 +175,8 @@ const RoomPage = () => {
     socket.on("room:call:end", handlecallend);
 
     return () => {
+      socket.off("remoteaudio:status", handelremoteaudio);
+      socket.off("remotevedio:status", handelremotevedio);
       socket.off("user:joined", handleUserJoined);
       socket.off("room:full", handleRoomFull);
       socket.off("incomming:call", handleIncommingCall);
@@ -163,7 +195,9 @@ const RoomPage = () => {
     handleNegoNeedFinal,
     handleCallUser,
     handleRoomFull,
-    handleCreator
+    handleCreator,
+    handelremotevedio,
+    handelremoteaudio
   ]);
 
   return (
@@ -175,11 +209,15 @@ const RoomPage = () => {
         <div className=" w-[13%] h-full bg-slate-800">
 
         <div className=" w-full h-[8rem] border-2 border-black bg-white flex items-center justify-center overflow-hidden">
+        { (!remotevedio || !remoteStream) &&
+          <div className=" bg-black text-white h-[8rem] w-[12.6%] border-black border-2 flex justify-center items-center text-7xl absolute "><FaUser/></div>
+        }
+       
         {remoteStream && (
             <>
               <ReactPlayer
-                playing
-                muted={true}
+                playing={true}
+                muted={remoteaudio}
                 url={remoteStream}
               />
             </>
@@ -193,11 +231,11 @@ const RoomPage = () => {
 
         <div className=" overflow-hidden rounded-full flex justify-center bg-white items-center h-[5rem] w-[5rem]">
         <div className=" flex justify-center items-center h-[7rem] w-[7rem]">
-        {myStream && (
+        {myStream  && (
         <>
           <ReactPlayer
-            playing
-            muted
+            playing={true}
+            muted={audio}
             height="7rem"
             width="7rem"
             url={myStream}
@@ -206,10 +244,30 @@ const RoomPage = () => {
         )}
         </div>
         </div>
-       {!start && myStream && !roomCreator && <button className=" text-white ml-10 bg-green-400 rounded-full p-4" onClick={sendStreams}>Call</button>}
-       { start && !roomCreator && <button className="text-white ml-10 bg-red-400 rounded-full p-4"onClick={handlecallend}>END</button>}
-       {!calldone && remoteSocketId && roomCreator && <button className="text-white ml-10 bg-green-400 rounded-full p-4" onClick={handleCallUser}>CALL</button>}
-       { calldone && <button className="text-white ml-10 bg-red-400 rounded-full p-4" onClick={handlecallend}>END</button>}
+
+        {vedio ?
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handelVedio}><HiOutlineVideoCameraSlash/></button> 
+        : 
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handelVedio}><HiOutlineVideoCamera/></button>
+        }
+
+        {!audio ?
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handelAudio}><IoMdMicOff/></button> 
+        : 
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handelAudio}><IoMdMic/></button>
+        }
+
+        {fullscreen ?
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><RiFullscreenExitFill/></button> 
+        : 
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><RiFullscreenFill/></button>
+        }
+
+
+       {!start && myStream && !roomCreator && <button className=" text-white ml-10 bg-green-400 text-2xl rounded-full p-4" onClick={sendStreams}><LuPhoneCall/></button>}
+       { start && !roomCreator && <button className="text-white ml-10 bg-red-400 rounded-full text-2xl p-4"onClick={handlecallend}><SlCallEnd/></button>}
+       {!calldone && remoteSocketId && roomCreator && <button className="text-white ml-10 bg-green-400 text-2xl rounded-full p-4" onClick={handleCallUser}><LuPhoneCall/></button>}
+       { calldone && <button className="text-white ml-10 bg-red-400 rounded-full text-2xl p-4" onClick={handlecallend}><SlCallEnd/></button>}
 
       </div>
     </div>
