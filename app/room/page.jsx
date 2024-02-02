@@ -16,7 +16,14 @@ import { IoMdMicOff } from "react-icons/io";
 import { FaUser } from "react-icons/fa6";
 import { RiFullscreenFill } from "react-icons/ri";
 import { RiFullscreenExitFill } from "react-icons/ri";
- 
+import { LuScreenShare } from "react-icons/lu";
+import { LuScreenShareOff } from "react-icons/lu";
+import { TbChalkboardOff } from "react-icons/tb";
+import { TbChalkboard } from "react-icons/tb";
+import { TbCodeOff } from "react-icons/tb";
+import { TbCode } from "react-icons/tb";
+import screenfull from "screenfull";
+
 const RoomPage = () => {
   const socket = useSocket();
   const [remoteSocketId, setRemoteSocketId] = useState(null);
@@ -32,7 +39,24 @@ const RoomPage = () => {
   const [audio, setaudio] = useState(true);
   const [remotevedio, setremotevedio] = useState(false);
   const [remoteaudio, setremoteaudio] = useState(true);
-  const [fullscreen, setfullscreen] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [screenshare, setScreenshare] = useState(false);
+  const [board, setboard] = useState(false);
+  const [code, setcode] = useState(false);
+
+  useEffect(() => {
+    if (screenfull.isEnabled) {
+      screenfull.on('change', () => {
+        setIsFullscreen(screenfull.isFullscreen);
+      });
+    }
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (screenfull.isEnabled) {
+      screenfull.toggle();
+    }
+  };
 
   const handleUserJoined = useCallback(({ email, id }) => {
     console.log(`Email ${email} joined room`);
@@ -202,15 +226,15 @@ const RoomPage = () => {
 
   return (
     <div className=" p-5 flex flex-col  items-center h-screen w-screen bg-slate-700">
-      <div className=" flex w-full h-[87%] bg-white">
-        <div className=" w-[87%] h-full flex justify-center items-center">
+      <div className=" flex w-full h-[95%] bg-white">
+        <div className=" w-[78%] h-full flex justify-center items-center">
         {start || calldone ? "Connected" : remoteSocketId ? "Some has joined" : "No one in room"}
         </div>
-        <div className=" w-[13%] h-full bg-slate-800">
+        <div className=" w-[22%] h-full bg-slate-800">
 
-        <div className=" w-full h-[8rem] border-2 border-black bg-white flex items-center justify-center overflow-hidden">
+        <div className=" w-full h-[12rem] border-2 border-black bg-white flex items-center justify-center overflow-hidden">
         { (!remotevedio || !remoteStream) &&
-          <div className=" bg-black text-white h-[8rem] w-[12.6%] border-black border-2 flex justify-center items-center text-7xl absolute "><FaUser/></div>
+          <div className=" bg-black text-white h-[12rem] w-[21.4%] border-black border-2 flex justify-center items-center text-7xl absolute "><FaUser/></div>
         }
        
         {remoteStream && (
@@ -227,7 +251,7 @@ const RoomPage = () => {
         </div>
       </div>
 
-      <div className=" flex mt-4 w-full justify-center items-center bg-slate-700">
+      <div className=" flex mt-6 w-full justify-center items-center bg-slate-700">
 
         <div className=" overflow-hidden rounded-full flex justify-center bg-white items-center h-[5rem] w-[5rem]">
         <div className=" flex justify-center items-center h-[7rem] w-[7rem]">
@@ -235,7 +259,7 @@ const RoomPage = () => {
         <>
           <ReactPlayer
             playing={true}
-            muted={audio}
+            muted={true}
             height="7rem"
             width="7rem"
             url={myStream}
@@ -257,13 +281,30 @@ const RoomPage = () => {
         <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handelAudio}><IoMdMic/></button>
         }
 
-        {fullscreen ?
-        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><RiFullscreenExitFill/></button> 
+        {screenshare ?
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><LuScreenShareOff/></button> 
         : 
-        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><RiFullscreenFill/></button>
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><LuScreenShare/></button>
         }
 
+        {board ?
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><TbCode/></button> 
+        : 
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><TbChalkboard/></button>
+        }
 
+        {code ?
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><TbCodeOff/></button> 
+        : 
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><TbCode/></button>
+        }
+
+        {isFullscreen ?
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={toggleFullscreen} ><RiFullscreenExitFill/></button> 
+        : 
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={toggleFullscreen} ><RiFullscreenFill/></button>
+        }
+        
        {!start && myStream && !roomCreator && <button className=" text-white ml-10 bg-green-400 text-2xl rounded-full p-4" onClick={sendStreams}><LuPhoneCall/></button>}
        { start && !roomCreator && <button className="text-white ml-10 bg-red-400 rounded-full text-2xl p-4"onClick={handlecallend}><SlCallEnd/></button>}
        {!calldone && remoteSocketId && roomCreator && <button className="text-white ml-10 bg-green-400 text-2xl rounded-full p-4" onClick={handleCallUser}><LuPhoneCall/></button>}
