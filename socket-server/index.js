@@ -13,18 +13,6 @@ const roomParticipants = new Map();
 io.on("connection", (socket) => {
   console.log(`Socket Connected`, socket.id);
 
-    // Handle screen share offer
-    socket.on("screen-share-offer", ({ room, offer }) => {
-      console.log(`Received screen-share offer from ${socket.id} in room ${room}`);
-      socket.to(room).emit("screen-share-offer", { from: socket.id, offer });
-    });
-  
-    // Handle stop-screen-share event
-    socket.on("stop-screen-share", ({ room }) => {
-      console.log(`Received stop-screen-share request from ${socket.id} in room ${room}`);
-      socket.to(room).emit("stop-screen-share");
-    });
-
   socket.on("codeeditor:status" , ({status, room}) => {
     socket.to(room).emit("remotecodeeditor:status", {status: status});
   });

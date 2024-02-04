@@ -22,8 +22,8 @@ import { TbChalkboardOff } from "react-icons/tb";
 import { TbChalkboard } from "react-icons/tb";
 import { TbCodeOff } from "react-icons/tb";
 import { TbCode } from "react-icons/tb";
-import screenfull from "screenfull";
 import Chat from "./Chat";
+import screenfull from "screenfull";
 
 const RoomPage = () => {
   const socket = useSocket();
@@ -44,7 +44,8 @@ const RoomPage = () => {
   const [screenshare, setScreenshare] = useState(false);
   const [board, setboard] = useState(false);
   const [code, setcode] = useState(false);
-
+  const [youPresent, setYouPresent] = useState(false);
+  const [ownScreen, setOwnScreen] = useState();
 
   const toggleFullscreen = () => {
     if (screenfull.isEnabled) {
@@ -180,21 +181,92 @@ const RoomPage = () => {
     setremoteaudio(status);
   },[]);
 
-  const handleScreenShareOn = useCallback(async() => {
-    socket.emit("screenshare:status", {status: true, room});
-    setcode(false);
-    setboard(false);
-    setScreenshare(true);
-  },[]);
+  const handleScreenShareOn = useCallback(async () => {
+    const screenStream = await navigator.mediaDevices.getDisplayMedia({
+      video: true,
+    });
+  
+    setOwnScreen(screenStream);
+  
+    // Replace the video track in the existing peer connection
+    const videoTrack = myStream.getVideoTracks()[0];
+    const sender = peer.peer.getSenders().find((s) => s.track === videoTrack);
+  
+    if (sender) {
+      sender.replaceTrack(screenStream.getVideoTracks()[0]);
+      socket.emit("screenshare:status", { status: true, room });
+      setcode(false);
+      setboard(false);
+      setScreenshare(true);
+      setYouPresent(true);
+    } else {
+      console.error("Sender not found");
+    }
+  }, [myStream, room, socket]);
+  
+  const handleScreenShareOff = async () => {
 
-  const handleScreenShareOff = useCallback(async() => {
-    socket.emit("screenshare:status", {status: false, room});
-    setcode(false);
-    setboard(false);
-    setScreenshare(false);
-  },[]);
+    if(youPresent){
+
+    console.log("Calling screen share off");
+  
+    // Replace the screen-sharing track with the original video track
+    const videoTracks = myStream?.getVideoTracks();
+    const videoTrack = videoTracks && videoTracks.length > 0 ? videoTracks[0] : null;
+  
+    console.log("Video track:", videoTrack);
+  
+    const senders = peer.peer.getSenders();
+    console.log("Senders:", senders);
+  
+    if (videoTrack) {
+      const sender = senders[1];
+  
+      console.log("Sender:", senders[1]);
+  
+      if (senders[1]) {
+        sender.replaceTrack(videoTrack);
+        socket.emit("screenshare:status", { status: false, room });
+        setcode(false);
+        setboard(false);
+        setScreenshare(false);
+        setYouPresent(false);
+      } else {
+        console.error("Sender not found");
+      }
+    } else {
+      console.error("Video track not found in myStream");
+    }
+  }
+  };
+  
+  
+
+  useEffect(() => {
+    // ... (existing useEffect code)
+
+    socket.on("screenshare:status", (data) => {
+      const { status } = data;
+      if (status) {
+        handleScreenShareOn();
+      } else {
+        handleScreenShareOff();
+      }
+    });
+
+    return () => {
+      // ... (existing cleanup code)
+    };
+  }, [
+    // ... (existing dependencies)
+    handleScreenShareOn,
+    handleScreenShareOff,
+  ]);
 
   const handelRemoteScreenShare = useCallback(async({status}) => {
+    if(!status){
+      await handleScreenShareOff();
+    }
     setcode(false);
     setboard(false);
     setScreenshare(status);
@@ -289,28 +361,47 @@ const RoomPage = () => {
 
   return (
     <div className=" p-5 flex flex-col overflow-hidden  items-center h-screen w-screen bg-slate-700">
-      <div className=" flex w-full h-[87%] bg-white">
-        <div className=" w-[78%] h-full flex justify-center items-center">
+      <div className=" flex w-full h-[87%] bg-white overflow-hidden">
+        <div className=" w-[78%] h-full flex justify-center items-center scale-[170%] bg-gray-600">
 
+        { youPresent ? (
+              <ReactPlayer 
+                playing={true}
+                muted={true}
+                url={ownScreen}
+                width={"1200px"}
+              />
+              ) 
+        : 
+             (
+              screenshare && remoteStream &&
+              <ReactPlayer
+                playing={true}
+                muted={true}
+                url={remoteStream}
+                width={"1200px"}
+              /> 
+              )
+        }
 
-        {/* {start || calldone ? "Connected" : remoteSocketId ? "Some has joined" : "No one in room"} */}
+        {start || calldone ? <div className=" font-bold text-white absolute -z-10">Connected</div> : remoteSocketId ? <div className=" font-bold text-white absolute -z-10">Some has joined</div> : <div className=" font-bold text-white absolute -z-10">No one in room</div>}
         </div>
-        <div className=" w-[22%] h-[100%] flex flex-col justify-between bg-slate-400 overflow-hidden">
+        <div className=" w-[22%] h-[100%] z-10 flex flex-col justify-between bg-slate-400 overflow-hidden">
 
         <div className=" w-full h-[30%] border-2 border-black bg-white flex items-center justify-center overflow-y-hidden">
         { (!remotevedio || !remoteStream) &&
           <div className=" bg-black text-white object-cover w-[21.4%] h-[24.5%] border-black border-2 flex justify-center items-center text-7xl absolute "><FaUser/></div>
         }
        
-        {remoteStream && (
+        { !youPresent && screenshare ? (<div className=" text-xl font-bold">Presenting</div>) : (remoteStream &&
             <>
               <ReactPlayer
                 playing={true}
                 muted={remoteaudio}
                 url={remoteStream}
               />
-            </>
-          )}
+            </>)
+          }
         </div>
         <div className=" h-[70%] overflow-x-hidde ">
         <Chat/>

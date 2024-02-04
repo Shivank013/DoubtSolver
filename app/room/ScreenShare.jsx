@@ -1,25 +1,22 @@
-// ScreenShare.js
+// Update the ScreenShare component
 import React, { useEffect, useRef } from 'react';
 
-const ScreenShare = ({ stream }) => {
+const ScreenShare = ({ socket }) => {
   const videoRef = useRef();
 
   useEffect(() => {
-    const setStreamOnVideo = () => {
-      if (videoRef.current && stream && stream instanceof MediaStream) {
-        videoRef.current.srcObject = stream;
+    const handleScreenShareScreenshot = ({ screenshot }) => {
+      if (videoRef.current && screenshot) {
+        videoRef.current.src = screenshot;
       }
     };
 
-    setStreamOnVideo();
+    socket.on("screen-share-screenshot", handleScreenShareScreenshot);
 
     return () => {
-      // Clean up the video element when the component unmounts
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
+      socket.off("screen-share-screenshot", handleScreenShareScreenshot);
     };
-  }, [stream]);
+  }, [socket]);
 
   return (
     <div className="screen-share-container">
