@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback, useState, useRef } from "react";
 import ReactPlayer from "react-player";
 import peer from "../../services/peer";
 import { useSocket } from "../../context/SocketProvider";
@@ -23,6 +23,7 @@ import { TbChalkboard } from "react-icons/tb";
 import { TbCodeOff } from "react-icons/tb";
 import { TbCode } from "react-icons/tb";
 import screenfull from "screenfull";
+import Chat from "./Chat";
 
 const RoomPage = () => {
   const socket = useSocket();
@@ -44,13 +45,6 @@ const RoomPage = () => {
   const [board, setboard] = useState(false);
   const [code, setcode] = useState(false);
 
-  useEffect(() => {
-    if (screenfull.isEnabled) {
-      screenfull.on('change', () => {
-        setIsFullscreen(screenfull.isFullscreen);
-      });
-    }
-  }, []);
 
   const toggleFullscreen = () => {
     if (screenfull.isEnabled) {
@@ -139,7 +133,7 @@ const RoomPage = () => {
   },[])
 
   useEffect(() => {
-    peer.peer.addEventListener("track", async (ev) => {
+      peer.peer.addEventListener("track", async (ev) => {
       const remoteStream = ev.streams;
       console.log("GOT TRACKS!!");
       console.log(remoteStream);
@@ -186,7 +180,70 @@ const RoomPage = () => {
     setremoteaudio(status);
   },[]);
 
+  const handleScreenShareOn = useCallback(async() => {
+    socket.emit("screenshare:status", {status: true, room});
+    setcode(false);
+    setboard(false);
+    setScreenshare(true);
+  },[]);
+
+  const handleScreenShareOff = useCallback(async() => {
+    socket.emit("screenshare:status", {status: false, room});
+    setcode(false);
+    setboard(false);
+    setScreenshare(false);
+  },[]);
+
+  const handelRemoteScreenShare = useCallback(async({status}) => {
+    setcode(false);
+    setboard(false);
+    setScreenshare(status);
+  },[]);
+
+  const handlewhiteboardOn = useCallback(async() => {
+    socket.emit("whiteboard:status", {status: true, room});
+    setcode(false);
+    setScreenshare(false);
+    setboard(true);
+  },[]);
+
+  const handlewhiteboardOff = useCallback(async() => {
+    socket.emit("whiteboard:status", {status: false, room});
+    setScreenshare(false);
+    setcode(false);
+    setboard(false);
+  },[]);
+
+  const handleRemoteWhiteboard = useCallback(async({status}) => {
+    setcode(false);
+    setScreenshare(false);
+    setboard(status);
+  },[]);
+
+  const handlecodeeditorOn = useCallback(async() => {
+    socket.emit("codeeditor:status", {status: true, room});
+    setScreenshare(false);
+    setboard(false);
+    setcode(true);
+  },[]);
+
+  const handlecodeeditorOff = useCallback(async() => {
+    socket.emit("codeeditor:status", {status: false, room});
+    setScreenshare(false);
+    setboard(false);
+    setcode(false);
+  },[]);
+
+  const handleRemotecodeeditor = useCallback(async({status}) => {
+    setScreenshare(false);
+    setboard(false);
+    setcode(status);
+  },[]);
+
   useEffect(() => {
+    socket.on("remotecodeeditor:status", handleRemotecodeeditor);
+    socket.on("remotewhiteboard:status", handleRemoteWhiteboard);
+    socket.on("remotescreenshare:status", handelRemoteScreenShare);
     socket.on("remotevedio:status", handelremotevedio);
     socket.on("remoteaudio:status", handelremoteaudio);
     socket.on("user:joined", handleUserJoined);
@@ -199,6 +256,9 @@ const RoomPage = () => {
     socket.on("room:call:end", handlecallend);
 
     return () => {
+      socket.off("remotecodeeditor:status", handleRemotecodeeditor);
+      socket.off("remotewhiteboard:status", handleRemoteWhiteboard);
+      socket.off("remotescreenshare:status", handelRemoteScreenShare);
       socket.off("remoteaudio:status", handelremoteaudio);
       socket.off("remotevedio:status", handelremotevedio);
       socket.off("user:joined", handleUserJoined);
@@ -221,20 +281,25 @@ const RoomPage = () => {
     handleRoomFull,
     handleCreator,
     handelremotevedio,
-    handelremoteaudio
+    handelremoteaudio,
+    handelRemoteScreenShare,
+    handleRemoteWhiteboard,
+    handleRemotecodeeditor
   ]);
 
   return (
-    <div className=" p-5 flex flex-col  items-center h-screen w-screen bg-slate-700">
-      <div className=" flex w-full h-[95%] bg-white">
+    <div className=" p-5 flex flex-col overflow-hidden  items-center h-screen w-screen bg-slate-700">
+      <div className=" flex w-full h-[87%] bg-white">
         <div className=" w-[78%] h-full flex justify-center items-center">
-        {start || calldone ? "Connected" : remoteSocketId ? "Some has joined" : "No one in room"}
-        </div>
-        <div className=" w-[22%] h-full bg-slate-800">
 
-        <div className=" w-full h-[12rem] border-2 border-black bg-white flex items-center justify-center overflow-hidden">
+
+        {/* {start || calldone ? "Connected" : remoteSocketId ? "Some has joined" : "No one in room"} */}
+        </div>
+        <div className=" w-[22%] h-[100%] flex flex-col justify-between bg-slate-400 overflow-hidden">
+
+        <div className=" w-full h-[30%] border-2 border-black bg-white flex items-center justify-center overflow-y-hidden">
         { (!remotevedio || !remoteStream) &&
-          <div className=" bg-black text-white h-[12rem] w-[21.4%] border-black border-2 flex justify-center items-center text-7xl absolute "><FaUser/></div>
+          <div className=" bg-black text-white object-cover w-[21.4%] h-[24.5%] border-black border-2 flex justify-center items-center text-7xl absolute "><FaUser/></div>
         }
        
         {remoteStream && (
@@ -247,6 +312,9 @@ const RoomPage = () => {
             </>
           )}
         </div>
+        <div className=" h-[70%] overflow-x-hidde ">
+        <Chat/>
+        </div>
 
         </div>
       </div>
@@ -255,7 +323,7 @@ const RoomPage = () => {
 
         <div className=" overflow-hidden rounded-full flex justify-center bg-white items-center h-[5rem] w-[5rem]">
         <div className=" flex justify-center items-center h-[7rem] w-[7rem]">
-        {myStream  && (
+        {myStream && vedio ? (
         <>
           <ReactPlayer
             playing={true}
@@ -265,7 +333,7 @@ const RoomPage = () => {
             url={myStream}
           />
         </>
-        )}
+        ) : (<div className=" text-3xl"><FaUser/></div>)}
         </div>
         </div>
 
@@ -282,21 +350,21 @@ const RoomPage = () => {
         }
 
         {screenshare ?
-        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><LuScreenShareOff/></button> 
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handleScreenShareOff} ><LuScreenShareOff/></button> 
         : 
-        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><LuScreenShare/></button>
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handleScreenShareOn} ><LuScreenShare/></button>
         }
 
         {board ?
-        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><TbCode/></button> 
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handlewhiteboardOff} ><TbChalkboardOff/></button> 
         : 
-        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><TbChalkboard/></button>
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handlewhiteboardOn} ><TbChalkboard/></button>
         }
 
         {code ?
-        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><TbCodeOff/></button> 
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handlecodeeditorOff} ><TbCodeOff/></button> 
         : 
-        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" ><TbCode/></button>
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handlecodeeditorOn} ><TbCode/></button>
         }
 
         {isFullscreen ?

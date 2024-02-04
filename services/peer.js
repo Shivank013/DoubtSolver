@@ -12,6 +12,41 @@ class PeerService {
           ],
         });
       }
+
+      this.screenSharePeer = new RTCPeerConnection({
+        iceServers: [
+          {
+            urls: [
+              "stun:stun.l.google.com:19302",
+              "stun:global.stun.twilio.com:3478",
+            ],
+          },
+        ],
+      });
+
+    }
+
+    async getScreenShareAnswer(offer) {
+      if (this.screenSharePeer) {
+        await this.screenSharePeer.setRemoteDescription(offer);
+        const ans = await this.screenSharePeer.createAnswer();
+        await this.screenSharePeer.setLocalDescription(new RTCSessionDescription(ans));
+        return ans;
+      }
+    }
+  
+    async setScreenShareLocalDescription(ans) {
+      if (this.screenSharePeer) {
+        await this.screenSharePeer.setRemoteDescription(new RTCSessionDescription(ans));
+      }
+    }
+  
+    async getScreenShareOffer() {
+      if (this.screenSharePeer) {
+        const offer = await this.screenSharePeer.createOffer();
+        await this.screenSharePeer.setLocalDescription(new RTCSessionDescription(offer));
+        return offer;
+      }
     }
   
     async getAnswer(offer) {
@@ -36,6 +71,7 @@ class PeerService {
         return offer;
       }
     }
+
   }
   
   export default new PeerService();
