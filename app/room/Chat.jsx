@@ -39,7 +39,7 @@ const Chat = () => {
   };
 
   return (
-    <div className="container mx-auto bg-slate-800 h-full flex flex-col-reverse p-4">
+    <div className="container mx-auto bg-gray-900 h-full flex flex-col-reverse p-4">
       <div className="flex flex-col">
         <div
           className="overflow-y-auto overflow-x-hidden gap-2 flex flex-col h-[22rem] m-1"

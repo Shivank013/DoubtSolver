@@ -26,7 +26,7 @@ export default function Ide() {
       });
 
       editorRef.current = editorInstance;
-      editorRef.current.setSize("76vw", "82vh");
+      editorRef.current.setSize("76vw", "83vh");
 
       editorRef.current.on("change", (instance, changes) => {
         const { origin } = changes;
@@ -48,8 +48,8 @@ export default function Ide() {
   }, [editorRef.current]);
 
   return (
-    <div className=" h-full w-full bg-white flex justify-center items-center">
-      <div id="realtimeEditor"></div>
+    <div className=" h-full w-full flex justify-center items-center">
+      <div className=" text-xl" id="realtimeEditor"></div>
     </div>
   );
 }

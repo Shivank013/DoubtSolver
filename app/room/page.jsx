@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback, useState, useRef } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import ReactPlayer from "react-player";
 import peer from "../../services/peer";
 import { useSocket } from "../../context/SocketProvider";
@@ -190,7 +190,6 @@ const RoomPage = () => {
   
     setOwnScreen(screenStream);
   
-    // Replace the video track in the existing peer connection
     const videoTrack = myStream.getVideoTracks()[0];
     const sender = peer.peer.getSenders().find((s) => s.track === videoTrack);
   
@@ -212,7 +211,6 @@ const RoomPage = () => {
 
     console.log("Calling screen share off");
   
-    // Replace the screen-sharing track with the original video track
     const videoTracks = myStream?.getVideoTracks();
     const videoTrack = videoTracks && videoTracks.length > 0 ? videoTracks[0] : null;
   
@@ -239,13 +237,12 @@ const RoomPage = () => {
     } else {
       console.error("Video track not found in myStream");
     }
+  } else if(screenshare) {
+    alert("You are not presenting");
   }
   };
-  
-  
 
   useEffect(() => {
-    // ... (existing useEffect code)
 
     socket.on("screenshare:status", (data) => {
       const { status } = data;
@@ -257,10 +254,8 @@ const RoomPage = () => {
     });
 
     return () => {
-      // ... (existing cleanup code)
     };
   }, [
-    // ... (existing dependencies)
     handleScreenShareOn,
     handleScreenShareOff,
   ]);
@@ -275,9 +270,9 @@ const RoomPage = () => {
   },[]);
 
   const handlewhiteboardOn = useCallback(async() => {
-    socket.emit("whiteboard:status", {status: true, room});
-    setcode(false);
     setScreenshare(false);
+    setcode(false);
+    socket.emit("whiteboard:status", {status: true, room});
     setboard(true);
   },[]);
 
@@ -295,15 +290,15 @@ const RoomPage = () => {
   },[]);
 
   const handlecodeeditorOn = useCallback(async() => {
-    socket.emit("codeeditor:status", {status: true, room});
     setScreenshare(false);
     setboard(false);
+    socket.emit("codeeditor:status", {status: true, room});
     setcode(true);
   },[]);
 
   const handlecodeeditorOff = useCallback(async() => {
-    socket.emit("codeeditor:status", {status: false, room});
     setScreenshare(false);
+    socket.emit("codeeditor:status", {status: false, room});
     setboard(false);
     setcode(false);
   },[]);
@@ -455,15 +450,47 @@ const RoomPage = () => {
         }
 
         {board ?
-        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handlewhiteboardOff} ><TbChalkboardOff/></button> 
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3"
+          onClick={() => {
+            if (screenshare) {
+              alert("Screen Sharing need to be Off");
+            } else {
+              handlewhiteboardOff();
+            }
+          }}
+         ><TbChalkboardOff/></button> 
         : 
-        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handlewhiteboardOn} ><TbChalkboard/></button>
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3"
+         onClick={() => {
+            if (screenshare) {
+              alert("Screen Sharing need to be Off");
+            } else {
+              handlewhiteboardOn();
+            }
+          }}
+         ><TbChalkboard/></button>
         }
 
         {code ?
-        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handlecodeeditorOff} ><TbCodeOff/></button> 
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3"
+         onClick={() => {
+            if (screenshare) {
+              alert("Screen Sharing need to be Off");
+            } else {
+              handlecodeeditorOff();
+            }
+          }}
+         ><TbCodeOff/></button> 
         : 
-        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3" onClick={handlecodeeditorOn} ><TbCode/></button>
+        <button className="text-white ml-10 bg-gray-800 rounded-full text-2xl p-3"
+         onClick={() => {
+            if (screenshare) {
+              alert("Screen Sharing need to be Off");
+            } else {
+              handlecodeeditorOn();
+            }
+          }}
+         ><TbCode/></button>
         }
 
         {isFullscreen ?
