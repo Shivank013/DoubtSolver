@@ -3,7 +3,6 @@ const { Server } = require("socket.io");
 const io = new Server(8000, {
   cors: true,
 });
-
 const emailToSocketIdMap = new Map();
 const socketidToEmailMap = new Map();
 const roomCreators = new Map(); 
@@ -12,6 +11,15 @@ const roomParticipants = new Map();
 
 io.on("connection", (socket) => {
   console.log(`Socket Connected`, socket.id);
+
+
+  socket.on('code-change',({code})=>{
+    socket.broadcast.emit('code-change',{code});
+})
+
+  socket.on('canvas-data', (data)=> {
+    io.emit('canvas-data', data);
+})
 
   socket.on("codeeditor:status" , ({status, room}) => {
     socket.to(room).emit("remotecodeeditor:status", {status: status});

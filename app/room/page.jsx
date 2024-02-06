@@ -24,6 +24,8 @@ import { TbCodeOff } from "react-icons/tb";
 import { TbCode } from "react-icons/tb";
 import Chat from "./Chat";
 import screenfull from "screenfull";
+import WhiteBoard from "./WhiteBoard";
+import Ide from "./Ide";
 
 const RoomPage = () => {
   const socket = useSocket();
@@ -307,6 +309,7 @@ const RoomPage = () => {
   },[]);
 
   const handleRemotecodeeditor = useCallback(async({status}) => {
+    handleScreenShareOff();
     setScreenshare(false);
     setboard(false);
     setcode(status);
@@ -362,35 +365,40 @@ const RoomPage = () => {
   return (
     <div className=" p-5 flex flex-col overflow-hidden  items-center h-screen w-screen bg-slate-700">
       <div className=" flex w-full h-[87%] bg-white overflow-hidden">
-        <div className=" w-[78%] h-full flex justify-center items-center scale-[170%] bg-gray-600">
+      <div className=" w-[78%] h-full flex justify-center items-center overflow-hidden bg-gray-600">
 
-        { youPresent ? (
+      <div className=" absolute z-30 scale-[180%]">
+      { youPresent ? (
               <ReactPlayer 
                 playing={true}
                 muted={true}
                 url={ownScreen}
-                width={"1200px"}
               />
               ) 
         : 
-             (
+            (
               screenshare && remoteStream &&
               <ReactPlayer
                 playing={true}
                 muted={true}
                 url={remoteStream}
-                width={"1200px"}
               /> 
               )
         }
+      </div>
 
-        {start || calldone ? <div className=" font-bold text-white absolute -z-10">Connected</div> : remoteSocketId ? <div className=" font-bold text-white absolute -z-10">Some has joined</div> : <div className=" font-bold text-white absolute -z-10">No one in room</div>}
-        </div>
+      <div className=" z-30 mx-auto h-[100%]">{board && <WhiteBoard/>}</div>
+
+      <div className="h-[100%] w-[100%] z-30">{code && <Ide/>}</div>
+
+      <div className="text-3xl font-bold text-white absolute" >{start || calldone ? "Connected" : remoteSocketId ? "Some has joined" : "No one in room"}</div>
+
+      </div>
         <div className=" w-[22%] h-[100%] z-10 flex flex-col justify-between bg-slate-400 overflow-hidden">
 
-        <div className=" w-full h-[30%] border-2 border-black bg-white flex items-center justify-center overflow-y-hidden">
+        <div className=" w-full h-[30%] border-4 border-black bg-white flex items-center justify-center overflow-hidden">
         { (!remotevedio || !remoteStream) &&
-          <div className=" bg-black text-white object-cover w-[21.4%] h-[24.5%] border-black border-2 flex justify-center items-center text-7xl absolute "><FaUser/></div>
+          <div className=" bg-black text-white object-cover w-[21.1%] h-[24.6%] border-black border-2 flex justify-center items-center text-7xl absolute "><FaUser/></div>
         }
        
         { !youPresent && screenshare ? (<div className=" text-xl font-bold">Presenting</div>) : (remoteStream &&
