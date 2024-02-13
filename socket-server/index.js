@@ -1,6 +1,10 @@
+require('dotenv').config();
 const { Server } = require("socket.io");
 
-const io = new Server(8000, {
+const port = process.env.PORT || 8000;
+console.log("Ryunning on port number: ",port);
+
+const io = new Server(port, {
   cors: true,
 });
 const emailToSocketIdMap = new Map();
