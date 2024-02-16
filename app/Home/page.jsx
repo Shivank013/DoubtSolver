@@ -1,4 +1,4 @@
-"use client"
+// server component
 
 import React from 'react';
 import Image from 'next/image';
@@ -11,7 +11,7 @@ import messaging from "../../public/images/messaging.png"
 import code from "../../public/images/code.png"
 import vediocall from "../../public/images/someonehasjoined.png"
 import { MdArrowOutward } from "react-icons/md";
-import { TypeAnimation } from 'react-type-animation';
+import dynamic from 'next/dynamic';
 import { SlCallEnd } from "react-icons/sl";
 import { HiOutlineVideoCamera } from "react-icons/hi2";
 import { IoMdMic } from "react-icons/io";
@@ -20,6 +20,8 @@ import { RiFullscreenFill } from "react-icons/ri";
 import { LuScreenShare } from "react-icons/lu";
 import { TbChalkboard } from "react-icons/tb";
 import { TbCode } from "react-icons/tb";
+
+const ClientComponent = dynamic(() => import('./Typer'), { ssr: false });
 
 const Page = () => {
   let signup=true;
@@ -53,13 +55,7 @@ const Page = () => {
 
         <div className='text-6xl text-red-400 font-sans absolute mt-[20%] -ml-[29%] w-[35%] font-bold'>
           
-          <TypeAnimation
-                sequence={['Screen Sharing.',2000,'Messaging.',2000,'Whiteboard.',2000,'Code Editor.',2000,'Video call.',2000,'Review.',2000,'Rating.',2000]}
-                wrapper="span"
-                speed={50}
-                style={{ fontSize: '1em', display: 'inline-block' }}
-                repeat={Infinity}
-          />
+          <ClientComponent/>
 
         </div>
 
@@ -155,27 +151,27 @@ const Page = () => {
       <div className="container mx-auto">
         <h2 className="text-3xl font-bold mb-8">Frequently Asked Questions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="border p-4 rounded-lg">
+          <div className="border shadow-xl cur p-4 rounded-lg">
             <h3 className="text-xl font-bold mb-4">Question 1: What is your app about?</h3>
             <p className="text-gray-700">Answer: Our app is a one-on-one student expert doubt-solving platform that provides features like screen sharing, messaging, whiteboard, code editor, and video call to help students get expert guidance right at their fingertips.</p>
           </div>
-          <div className="border p-4 rounded-lg">
+          <div className="border p-4 shadow-xl rounded-lg">
             <h3 className="text-xl font-bold mb-4">Question 2: How can I get started?</h3>
             <p className="text-gray-700">Answer: To get started, simply sign up for an account on our website. Once you're logged in, you can start asking your doubts and get expert guidance from our community of experts.</p>
           </div>
-          <div className="border p-4 rounded-lg">
+          <div className="border p-4 shadow-xl rounded-lg">
             <h3 className="text-xl font-bold mb-4">Question 3: How does screen sharing help in doubt solving?</h3>
             <p className="text-gray-700">Answer: Screen sharing allows experts to visually demonstrate concepts, provide step-by-step guidance, and offer immediate feedback, thereby enhancing understanding and problem-solving capabilities.</p>
           </div>
-          <div className="border p-4 rounded-lg">
+          <div className="border p-4 shadow-xl rounded-lg">
             <h3 className="text-xl font-bold mb-4">Question 4: How does messaging help in doubt solving?</h3>
             <p className="text-gray-700">Answer: Messaging provides a convenient and asynchronous communication channel, allowing students to ask questions, share doubts, and receive expert guidance at their own pace, fostering continuous learning and doubt resolution.</p>
           </div>
-          <div className="border p-4 rounded-lg">
+          <div className="border p-4 shadow-xl rounded-lg">
             <h3 className="text-xl font-bold mb-4">Question 5: How does the code editor help in doubt solving?</h3>
             <p className="text-gray-700">Answer: The code editor provides a dedicated environment for students to write, test, and debug code, enabling them to receive real-time feedback and guidance from experts, leading to improved coding skills and effective doubt resolution.</p>
           </div>
-          <div className="border p-4 rounded-lg">
+          <div className="border p-4 shadow-xl rounded-lg">
             <h3 className="text-xl font-bold mb-4">Question 6: How does the whiteboard help in doubt solving?</h3>
             <p className="text-gray-700">Answer: The whiteboard allows experts to visually explain concepts, draw diagrams, and illustrate solutions, making it easier for students to understand complex topics and solve problems.</p>
           </div>
