@@ -1,7 +1,8 @@
 "use client";
 import Codemirror from "codemirror";
 import { useEffect, useRef } from "react";
-import "codemirror/lib/codemirror.css";
+// import "codemirror/lib/codemirror.css";
+import "codemirror/lib/codemirror.css"
 import "codemirror/mode/javascript/javascript";
 import "codemirror/theme/dracula.css";
 import "codemirror/addon/edit/closetag";

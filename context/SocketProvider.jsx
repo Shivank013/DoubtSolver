@@ -11,7 +11,7 @@ export const useSocket = () => {
 };
 
 export const SocketProvider = (props) => {
-  const socket = useMemo(() => io("localhost:8000"), []);
+  const socket = useMemo(() => io("localhost:7000"), []);
   const [email, setEmail] = useState("");
   const [room, setRoom] = useState("");
 

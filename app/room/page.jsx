@@ -362,7 +362,7 @@ const RoomPage = () => {
       <div className=" flex w-full h-[87%] bg-white overflow-hidden">
       <div className=" w-[78%] h-full flex justify-center items-center overflow-hidden bg-gray-600">
 
-      <div className=" absolute z-30 scale-[180%]">
+      <div className=" absolute z-30 scale-[170%]">
       { youPresent ? (
               <ReactPlayer 
                 playing={true}

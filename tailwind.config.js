@@ -14,5 +14,8 @@ module.exports = {
       },
     },
   },
+  fontFamily: {
+    sans: ['Mulish', 'sans-serif'],
+  },
   plugins: [],
 };
